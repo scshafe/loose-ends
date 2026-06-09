@@ -1,0 +1,75 @@
+# loose-ends — Tailscale-exposed task service, self-contained stack.
+#
+# Brings up the loose-ends app (joins your tailnet via tsnet) + its Postgres on
+# a private network. Reached at  loose-ends.<your-tailnet>.ts.net:17890  from any
+# device on your tailnet. No host port is published — the HTTP API is
+# unauthenticated by default, so it stays on the tailnet only.
+#
+# FIRST: write your Tailscale auth key to ~/.config/loose-ends/tsnet.authkey
+#        (mode 0600). See README.md "Where to store the key".
+#
+# Then, from this directory:   docker compose up -d --build
+
+name: loose-ends
+
+services:
+  loose-ends:
+    build:
+      context: ../..          # repo root (where the Dockerfile + .dockerignore live)
+      dockerfile: Dockerfile
+    image: loose-ends:latest
+    container_name: loose-ends
+    restart: unless-stopped   # crash recovery + start on host boot (with Docker's own boot setting)
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Container-tuned config — the only change from stock defaults is the DB
+      # host (db, the compose service) instead of 127.0.0.1.
+      - ./config.toml:/home/loose-ends/.config/loose-ends/config.toml:ro
+
+      # Tailscale auth key. Read-only; consumed ONLY on first registration, then
+      # ignored once tsnet-state holds the node identity. Same host path the
+      # native install uses, so one key location serves both. The file MUST
+      # exist before `up` (a missing source makes Docker create a directory here,
+      # which fails the read) — create it first, see README.md.
+      - ${HOME}/.config/loose-ends/tsnet.authkey:/home/loose-ends/.config/loose-ends/tsnet.authkey:ro
+
+      # Persistent tsnet node identity (tailscaled.state). MUST survive restarts,
+      # else the node re-registers and re-consumes an auth key on every boot.
+      - tsnet-state:/home/loose-ends/.config/loose-ends/tsnet-state
+
+    # --- Auth key via env, instead of the file mount above (alternative) ------
+    # If the file mount can't be read (e.g. a 0600 file on native Linux with a
+    # container/host uid mismatch), comment out the tsnet.authkey volume above
+    # and supply the key as TS_AUTHKEY from a gitignored .env file instead —
+    # tsnet falls back to $TS_AUTHKEY when no key file is present. Trade-off: an
+    # env var is visible in `docker inspect`. See README.md.
+    # env_file:
+    #   - .env
+
+  db:
+    image: postgres:17-bookworm
+    container_name: loose-ends-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: loose_ends
+      POSTGRES_DB: loose_ends
+      # The db port is NOT published; only the app container on this private
+      # network can reach Postgres, so trust auth is acceptable here. To require
+      # a password instead: set POSTGRES_PASSWORD and add it to the DSN in
+      # config.toml (postgres://loose_ends:PASSWORD@db:5432/loose_ends?...).
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # serve auto-migrates on boot; gate it behind a genuinely-ready Postgres.
+      test: ["CMD-SHELL", "pg_isready -U loose_ends -d loose_ends"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  tsnet-state:   # tsnet node identity — the thing that must persist
+  db-data:       # Postgres data directory

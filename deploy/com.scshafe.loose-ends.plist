@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sample launchd user agent for the loose-ends service (macOS).
+
+  Install: copy to ~/Library/LaunchAgents/com.scshafe.loose-ends.plist, edit the
+  binary path below, then `launchctl load ~/Library/LaunchAgents/com.scshafe.loose-ends.plist`.
+
+  Or let the binary generate one with the correct path:
+      loose-ends serve --install-launchd
+
+  The service reads its database DSN and tailnet settings from
+  ~/Library/Application Support/loose-ends/config.toml, and the Tailscale auth
+  key (first run only) from ~/.config/loose-ends/tsnet.authkey.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.scshafe.loose-ends</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/loose-ends</string>
+    <string>serve</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>/Users/CHANGEME/Library/Logs/loose-ends.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/CHANGEME/Library/Logs/loose-ends.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,2 @@
+# The .env here may hold a Tailscale auth key (TS_AUTHKEY) — never commit it.
+.env

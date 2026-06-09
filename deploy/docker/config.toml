@@ -1,0 +1,33 @@
+# loose-ends config for the Docker deployment.
+#
+# Mounted read-only at /home/loose-ends/.config/loose-ends/config.toml (the path
+# os.UserConfigDir() resolves to inside the container, with HOME=/home/loose-ends).
+#
+# The ONLY change from the stock defaults is the database host: inside the compose
+# network Postgres is reachable at "db" (the service name), not 127.0.0.1.
+
+[server]
+  url = "http://127.0.0.1:17890"
+
+[display]
+  color = "auto"
+  tree_indent = "  "
+  id_length = 8
+
+[defaults]
+
+[service]
+  listen_loopback = "127.0.0.1:17890"
+  tailnet_enabled = true
+  tailnet_hostname = "loose-ends"
+  tailnet_state_dir = "~/.config/loose-ends/tsnet-state"
+
+  # Defense-in-depth on top of the tailnet boundary: uncomment and set a token to
+  # require `Authorization: Bearer <token>` on every route except /healthz and
+  # /version. Without it the API is reachable unauthenticated by every device on
+  # your tailnet (gated only by Tailscale ACLs) — fine for a single-user tailnet,
+  # but set it if your tailnet has other people/devices.
+  # auth_token = "CHANGE-ME-long-random-string"
+
+  [service.database]
+    dsn = "postgres://loose_ends@db:5432/loose_ends?sslmode=disable"

@@ -1,0 +1,2 @@
+-- Intentionally a no-op: dropping pgcrypto/citext could break other objects in
+-- the database that depend on them, and they are cheap to leave installed.

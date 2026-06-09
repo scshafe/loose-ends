@@ -1,0 +1,22 @@
+# Keep the build context tiny: the Go module/build caches and local state dirs
+# below are gigabytes and are recreated inside the builder anyway.
+.git
+.gitignore
+
+# Local Go caches / state (gitignored at runtime; never needed in the image).
+.cache/
+.go/
+.go-cache/
+.gopath/
+.gomodcache/
+.gotmp/
+.home/
+.tmp/
+
+# A host-built binary must never shadow the one we compile in the builder stage.
+loose-ends
+
+# Docs, plans, and deploy samples are not build inputs.
+*.md
+.mc-plan/
+deploy/
