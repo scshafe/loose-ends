@@ -117,3 +117,5 @@ go test ./...                                   # unit tests
 LOOSE_ENDS_TEST_DSN='postgres://loose_ends@127.0.0.1:5432/le_test?sslmode=disable' \
   go test -tags integration ./internal/storage/ # integration tests (throwaway DB)
 ```
+
+<!-- autodeploy round-trip proof 2026-08-12 -->
